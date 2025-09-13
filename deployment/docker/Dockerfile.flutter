@@ -1,0 +1,41 @@
+# Multi-stage Dockerfile for Flutter Web build
+FROM cirrusci/flutter:stable AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy Flutter project files
+COPY pubspec.yaml pubspec.lock ./
+COPY lib/ lib/
+COPY web/ web/
+COPY android/ android/
+COPY ios/ ios/
+
+# Get dependencies
+RUN flutter pub get
+
+# Build Flutter web app
+RUN flutter build web --release --web-renderer html
+
+# Production stage with nginx
+FROM nginx:alpine AS production
+
+# Copy built web app to nginx
+COPY --from=builder /app/build/web /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY deployment/docker/nginx.conf /etc/nginx/nginx.conf
+
+# Create nginx user and set permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html
+
+# Expose port
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost/ || exit 1
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

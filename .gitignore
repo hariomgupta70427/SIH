@@ -1,0 +1,432 @@
+# ============================================
+# Railway Parts Management System - .gitignore
+# ============================================
+
+# ==========================================
+# 🔐 SECURITY & API KEYS (CRITICAL)
+# ==========================================
+# Firebase Configuration Files
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+
+# Environment Files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.staging
+**/.env
+**/.env.*
+
+# API Keys & Secrets
+**/config/secrets.json
+**/config/keys.json
+api_keys.txt
+secrets.txt
+credentials.json
+service-account-key.json
+
+# Database Connection Strings
+database.config
+db_config.json
+
+# ==========================================
+# 📱 FLUTTER & DART
+# ==========================================
+# Flutter Build Files
+**/build/
+**/android/build/
+**/ios/build/
+**/web/build/
+**/windows/build/
+**/linux/build/
+**/macos/build/
+
+# Flutter Generated Files
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+.metadata
+.flutter-plugins-dependencies
+
+# Flutter Coverage
+coverage/
+test/.test_coverage.dart
+
+# Flutter Web
+**/web/main.dart.js
+**/web/main.dart.js.map
+
+# Dart Packages
+.pub-cache/
+.pub/
+pubspec.lock
+
+# ==========================================
+# 🟢 NODE.JS & NPM
+# ==========================================
+# Dependencies
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Package Managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Runtime Data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage Directory
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# ==========================================
+# 🐍 PYTHON & ML
+# ==========================================
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.env/
+
+# Python Distribution / Packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit Test / Coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# ML Models & Data
+*.pkl
+*.joblib
+*.h5
+*.model
+models/trained/
+data/raw/
+data/processed/
+datasets/
+*.csv
+*.json
+*.parquet
+
+# TensorFlow
+*.pb
+saved_model/
+checkpoints/
+
+# ==========================================
+# ⛓️ BLOCKCHAIN & HARDHAT
+# ==========================================
+# Hardhat
+cache/
+artifacts/
+typechain/
+typechain-types/
+
+# Blockchain Networks
+.openzeppelin/
+deployments/
+
+# Hardhat Coverage
+coverage.json
+
+# ==========================================
+# 🗄️ DATABASES
+# ==========================================
+# SQLite
+*.sqlite
+*.sqlite3
+*.db
+
+# PostgreSQL
+*.sql.backup
+*.dump
+
+# MongoDB
+*.log
+
+# Redis
+dump.rdb
+
+# ==========================================
+# 🐳 DOCKER & DEPLOYMENT
+# ==========================================
+# Docker
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# Kubernetes
+*.kubeconfig
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# ==========================================
+# 📱 ANDROID
+# ==========================================
+# Android Studio
+.gradle/
+local.properties
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Android Build
+**/android/.gradle/
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+
+# Android Signing
+*.jks
+*.keystore
+key.properties
+keystore.properties
+
+# ==========================================
+# 🍎 iOS & macOS
+# ==========================================
+# iOS
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*sync/
+**/ios/**/.sconsign.dblite
+**/ios/**/.tags*
+**/ios/**/.vagrant/
+**/ios/**/DerivedData/
+**/ios/**/Icon?
+**/ios/**/Pods/
+**/ios/**/.symlinks/
+**/ios/**/profile
+**/ios/**/xcuserdata
+**/ios/.generated/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# macOS
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# ==========================================
+# 🖥️ WINDOWS & LINUX
+# ==========================================
+# Windows
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+
+# Linux
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+
+# ==========================================
+# 🔧 DEVELOPMENT TOOLS
+# ==========================================
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary Files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# ==========================================
+# 📊 TESTING & COVERAGE
+# ==========================================
+# Test Results
+test-results/
+test_results/
+junit.xml
+coverage/
+.coverage
+htmlcov/
+
+# Integration Test Screenshots
+**/integration_test/screenshots/
+
+# ==========================================
+# 📦 BUILD ARTIFACTS
+# ==========================================
+# APK Files (Keep only release APK)
+**/build/app/outputs/flutter-apk/app-debug.apk
+**/build/app/outputs/flutter-apk/app-profile.apk
+
+# Keep release APK for distribution
+# **/build/app/outputs/flutter-apk/app-release.apk
+
+# AAB Files
+**/build/app/outputs/bundle/
+
+# iOS Build
+**/build/ios/
+**/build/Runner.app/
+
+# Web Build (Optional - uncomment if you don't want to track web builds)
+# **/build/web/
+
+# ==========================================
+# 🔄 BACKUP & TEMPORARY FILES
+# ==========================================
+# Backup Files
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+
+# Archive Files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# ==========================================
+# 📈 ANALYTICS & MONITORING
+# ==========================================
+# Analytics
+google-analytics.json
+firebase-analytics.json
+
+# Monitoring
+newrelic.ini
+.newrelic.yml
+
+# ==========================================
+# 🚀 DEPLOYMENT SPECIFIC
+# ==========================================
+# Deployment Scripts (if they contain secrets)
+deploy_secrets.sh
+production_deploy.sh
+
+# SSL Certificates
+*.pem
+*.crt
+*.key
+*.p12
+*.pfx
+
+# ==========================================
+# 📝 DOCUMENTATION BUILD
+# ==========================================
+# Documentation
+docs/_build/
+site/
+
+# ==========================================
+# 🎯 PROJECT SPECIFIC
+# ==========================================
+# QR Code Test Images (if sensitive)
+test_qr_codes/
+sample_parts_data.json
+
+# User Generated Content
+uploads/
+user_data/
+
+# Cache Directories
+.cache/
+cache/
+
+# ==========================================
+# END OF .gitignore
+# ==========================================
