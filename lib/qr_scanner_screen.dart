@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:qr_code_tools/qr_code_tools.dart';
+import 'dart:io';
 import 'qr_result_screen.dart';
 
 class QRScannerScreen extends StatefulWidget {
@@ -10,10 +13,13 @@ class QRScannerScreen extends StatefulWidget {
 class _QRScannerScreenState extends State<QRScannerScreen> {
   MobileScannerController cameraController = MobileScannerController();
   bool _isScanned = false;
+  final TextEditingController _manualController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void dispose() {
     cameraController.dispose();
+    _manualController.dispose();
     super.dispose();
   }
 
@@ -27,18 +33,76 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       final String? qrValue = barcode.rawValue;
       
       if (qrValue != null && qrValue.isNotEmpty) {
-        setState(() => _isScanned = true);
-        
-        // Navigate to result page with scanned QR data
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => QRResultScreen(qrData: qrValue),
-          ),
-        );
+        _processQRData(qrValue);
         break;
       }
     }
+  }
+
+  // Process QR data and navigate
+  void _processQRData(String qrData) {
+    setState(() => _isScanned = true);
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QRResultScreen(qrData: qrData),
+      ),
+    );
+  }
+
+  // Pick image from gallery and scan QR
+  Future<void> _pickImageAndScan() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        final String? qrData = await QrCodeToolsPlugin.decodeFrom(image.path);
+        if (qrData != null && qrData.isNotEmpty) {
+          _processQRData(qrData);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No QR code found in image')),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error scanning image: $e')),
+      );
+    }
+  }
+
+  // Show manual entry dialog
+  void _showManualEntryDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Enter Part ID'),
+        content: TextField(
+          controller: _manualController,
+          decoration: InputDecoration(
+            hintText: 'e.g., P-001',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final partId = _manualController.text.trim();
+              if (partId.isNotEmpty) {
+                Navigator.pop(context);
+                _processQRData(partId);
+              }
+            },
+            child: Text('Submit'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -96,14 +160,36 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             ),
           ),
           
-          // Toggle flash button
+          // Action buttons
           Positioned(
             bottom: 50,
+            left: 20,
             right: 20,
-            child: FloatingActionButton(
-              mini: true,
-              onPressed: () => cameraController.toggleTorch(),
-              child: Icon(Icons.flash_on),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Manual entry
+                FloatingActionButton(
+                  mini: true,
+                  heroTag: 'manual',
+                  onPressed: _showManualEntryDialog,
+                  child: Icon(Icons.keyboard),
+                ),
+                // Gallery picker
+                FloatingActionButton(
+                  mini: true,
+                  heroTag: 'gallery',
+                  onPressed: _pickImageAndScan,
+                  child: Icon(Icons.photo_library),
+                ),
+                // Flash toggle
+                FloatingActionButton(
+                  mini: true,
+                  heroTag: 'flash',
+                  onPressed: () => cameraController.toggleTorch(),
+                  child: Icon(Icons.flash_on),
+                ),
+              ],
             ),
           ),
         ],

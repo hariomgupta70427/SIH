@@ -17,6 +17,8 @@ dependencies:
   connectivity_plus: ^5.0.2
   mobile_scanner: ^3.5.6
   http: ^1.1.0
+  image_picker: ^1.0.4
+  qr_code_tools: ^0.2.0
 
 dev_dependencies:
   flutter_test:

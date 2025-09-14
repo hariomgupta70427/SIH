@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 
 class QRResultScreen extends StatefulWidget {
   final String qrData;
@@ -12,44 +13,97 @@ class QRResultScreen extends StatefulWidget {
 }
 
 class _QRResultScreenState extends State<QRResultScreen> {
-  Map<String, dynamic>? partMetadata;
+  Map<String, dynamic>? partData;
+  Map<String, dynamic>? mlResult;
+  Map<String, dynamic>? blockchainResult;
   bool isLoading = true;
   String? errorMessage;
+  
+  // API base URL logic
+  String get baseUrl {
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:3000'; // Android emulator
+    }
+    return 'http://localhost:3000'; // Web/iOS simulator
+  }
 
   @override
   void initState() {
     super.initState();
-    _fetchPartMetadata();
+    _fetchAllData();
   }
 
-  // Fetch part metadata from backend API
-  Future<void> _fetchPartMetadata() async {
+  // Fetch all data from backend, ML, and blockchain APIs
+  Future<void> _fetchAllData() async {
     try {
-      // Replace with your actual API endpoint
-      final response = await http.get(
-        Uri.parse('https://your-api.com/parts/${widget.qrData}'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer your-token', // Add if needed
-        },
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          partMetadata = json.decode(response.body);
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          errorMessage = 'Failed to fetch part data: ${response.statusCode}';
-          isLoading = false;
-        });
-      }
-    } catch (e) {
+      // Fetch part data from backend
+      await _fetchPartData();
+      
+      // Fetch ML analysis
+      await _fetchMLAnalysis();
+      
+      // Fetch blockchain verification
+      await _fetchBlockchainVerification();
+      
       setState(() {
-        errorMessage = 'Network error: $e';
         isLoading = false;
       });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error fetching data: $e';
+        isLoading = false;
+      });
+    }
+  }
+  
+  Future<void> _fetchPartData() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/parts/${widget.qrData}'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        partData = json.decode(response.body);
+      }
+    } catch (e) {
+      print('Error fetching part data: $e');
+    }
+  }
+  
+  Future<void> _fetchMLAnalysis() async {
+    try {
+      final mlUrl = Platform.isAndroid ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+      final response = await http.post(
+        Uri.parse('$mlUrl/predict'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'part_id': widget.qrData,
+          'inspections': partData?['inspections'] ?? [],
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        mlResult = json.decode(response.body);
+      }
+    } catch (e) {
+      print('Error fetching ML analysis: $e');
+    }
+  }
+  
+  Future<void> _fetchBlockchainVerification() async {
+    try {
+      final blockchainUrl = Platform.isAndroid ? 'http://10.0.2.2:6000' : 'http://localhost:6000';
+      final response = await http.get(
+        Uri.parse('$blockchainUrl/verify/${widget.qrData}'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        blockchainResult = json.decode(response.body);
+      }
+    } catch (e) {
+      print('Error fetching blockchain verification: $e');
     }
   }
 
@@ -65,6 +119,33 @@ class _QRResultScreenState extends State<QRResultScreen> {
       default:
         return Colors.grey;
     }
+  }
+  
+  // Get risk color based on ML risk score
+  Color _getRiskColor(double? riskScore) {
+    if (riskScore == null) return Colors.grey;
+    if (riskScore > 0.7) return Colors.red;
+    if (riskScore > 0.4) return Colors.orange;
+    return Colors.green;
+  }
+  
+  // Build section header
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -116,66 +197,127 @@ class _QRResultScreenState extends State<QRResultScreen> {
                   subtitle: Text(errorMessage!),
                 ),
               )
-            else if (partMetadata != null) ...[
-              // Part Metadata Display
-              Text(
-                'Part Information',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              SizedBox(height: 12),
-
-              // Part Name
-              ListTile(
-                leading: Icon(Icons.inventory, color: Colors.blue),
-                title: Text('Part Name'),
-                subtitle: Text(partMetadata!['name'] ?? 'Unknown'),
-              ),
-
-              // Vendor Information
-              ListTile(
-                leading: Icon(Icons.business, color: Colors.green),
-                title: Text('Vendor'),
-                subtitle: Text(partMetadata!['vendor'] ?? 'Unknown'),
-              ),
-
-              // Status with colored indicator
-              ListTile(
-                leading: Icon(
-                  Icons.circle,
-                  color: _getStatusColor(partMetadata!['status']),
+            else ...[
+              // Part Information Section
+              if (partData != null) ...[
+                _buildSectionHeader('Part Information'),
+                Card(
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: Icon(Icons.inventory, color: Colors.blue),
+                        title: Text('Part Name'),
+                        subtitle: Text(partData!['name'] ?? 'Unknown'),
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.business, color: Colors.green),
+                        title: Text('Vendor'),
+                        subtitle: Text(partData!['vendor']?['name'] ?? 'Unknown'),
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          Icons.circle,
+                          color: _getStatusColor(partData!['status']),
+                        ),
+                        title: Text('Status'),
+                        subtitle: Text(partData!['status'] ?? 'Unknown'),
+                      ),
+                      if (partData!['warranty_months'] != null)
+                        ListTile(
+                          leading: Icon(Icons.security, color: Colors.orange),
+                          title: Text('Warranty'),
+                          subtitle: Text('${partData!['warranty_months']} months'),
+                        ),
+                    ],
+                  ),
                 ),
-                title: Text('Status'),
-                subtitle: Text(partMetadata!['status'] ?? 'Unknown'),
-              ),
-
-              // Analytics Section
-              if (partMetadata!['analytics'] != null) ...[
+              ],
+              
+              // ML Health Analysis Section
+              if (mlResult != null) ...[
                 SizedBox(height: 16),
-                Text(
-                  'Analytics',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                _buildSectionHeader('ML Health Analysis'),
+                Card(
+                  color: _getRiskColor(mlResult!['risk_score']).withOpacity(0.1),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: Icon(
+                          mlResult!['anomaly'] ? Icons.warning : Icons.check_circle,
+                          color: mlResult!['anomaly'] ? Colors.red : Colors.green,
+                        ),
+                        title: Text('Risk Score'),
+                        subtitle: Text('${(mlResult!['risk_score'] * 100).toInt()}%'),
+                        trailing: Chip(
+                          label: Text(
+                            mlResult!['anomaly'] ? 'ANOMALY' : 'NORMAL',
+                            style: TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                          backgroundColor: mlResult!['anomaly'] ? Colors.red : Colors.green,
+                        ),
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.lightbulb, color: Colors.amber),
+                        title: Text('Recommendation'),
+                        subtitle: Text(mlResult!['advice'] ?? 'No recommendations'),
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(height: 8),
-
-                // Usage Count
-                ListTile(
-                  leading: Icon(Icons.analytics, color: Colors.purple),
-                  title: Text('Usage Count'),
-                  subtitle: Text('${partMetadata!['analytics']['usageCount'] ?? 0}'),
+              ],
+              
+              // Blockchain Verification Section
+              if (blockchainResult != null) ...[
+                SizedBox(height: 16),
+                _buildSectionHeader('Blockchain Verification'),
+                Card(
+                  color: blockchainResult!['verified'] 
+                      ? Colors.green.withOpacity(0.1) 
+                      : Colors.red.withOpacity(0.1),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: Icon(
+                          blockchainResult!['verified'] ? Icons.verified : Icons.error,
+                          color: blockchainResult!['verified'] ? Colors.green : Colors.red,
+                        ),
+                        title: Text('Verification Status'),
+                        subtitle: Text(
+                          blockchainResult!['verified'] ? 'VERIFIED' : 'NOT VERIFIED'
+                        ),
+                        trailing: blockchainResult!['verified']
+                            ? Icon(Icons.check_circle, color: Colors.green)
+                            : Icon(Icons.cancel, color: Colors.red),
+                      ),
+                      if (blockchainResult!['tx'] != null)
+                        ListTile(
+                          leading: Icon(Icons.link, color: Colors.blue),
+                          title: Text('Transaction'),
+                          subtitle: Text(blockchainResult!['tx']),
+                        ),
+                    ],
+                  ),
                 ),
-
-                // Last Maintenance
-                ListTile(
-                  leading: Icon(Icons.build, color: Colors.orange),
-                  title: Text('Last Maintenance'),
-                  subtitle: Text(partMetadata!['analytics']['lastMaintenance'] ?? 'Never'),
-                ),
-
-                // Performance Score
-                ListTile(
-                  leading: Icon(Icons.speed, color: Colors.indigo),
-                  title: Text('Performance Score'),
-                  subtitle: Text('${partMetadata!['analytics']['performanceScore'] ?? 'N/A'}%'),
+              ],
+              
+              // Inspection History
+              if (partData?['inspections'] != null && partData!['inspections'].isNotEmpty) ...[
+                SizedBox(height: 16),
+                _buildSectionHeader('Recent Inspections'),
+                Card(
+                  child: Column(
+                    children: [
+                      for (var inspection in partData!['inspections'].take(3))
+                        ListTile(
+                          leading: Icon(
+                            inspection['result'] == 'passed' ? Icons.check : Icons.close,
+                            color: inspection['result'] == 'passed' ? Colors.green : Colors.red,
+                          ),
+                          title: Text('${inspection['inspection_type']} - ${inspection['result']}'),
+                          subtitle: Text('Score: ${inspection['score']}% - ${inspection['inspection_date']}'),
+                        ),
+                    ],
+                  ),
                 ),
               ],
             ],

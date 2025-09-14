@@ -6,14 +6,19 @@ import 'auth_screen.dart';
 import 'home_screen.dart';
 import 'services/offline_sync_service.dart';
 
+// Debug flag for demo mode
+const bool USE_DEV_AUTH = bool.fromEnvironment('USE_DEV_AUTH', defaultValue: true);
+
 void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  if (!USE_DEV_AUTH) {
+    // Initialize Firebase only in production mode
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
   
   // Initialize offline sync service
   await OfflineSyncService().initialize();
@@ -36,6 +41,11 @@ class MyApp extends StatelessWidget {
 class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    if (USE_DEV_AUTH) {
+      // Demo mode - bypass Firebase auth
+      return HomeScreen();
+    }
+    
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
