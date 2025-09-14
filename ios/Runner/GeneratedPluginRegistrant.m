@@ -54,10 +54,10 @@
 @import mobile_scanner;
 #endif
 
-#if __has_include(<qr_code_tools/QrCodeToolsPlugin.h>)
-#import <qr_code_tools/QrCodeToolsPlugin.h>
+#if __has_include(<qr_code_scanner/FlutterQrPlugin.h>)
+#import <qr_code_scanner/FlutterQrPlugin.h>
 #else
-@import qr_code_tools;
+@import qr_code_scanner;
 #endif
 
 @implementation GeneratedPluginRegistrant
@@ -71,7 +71,7 @@
   [FLTImagePickerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTImagePickerPlugin"]];
   [IntegrationTestPlugin registerWithRegistrar:[registry registrarForPlugin:@"IntegrationTestPlugin"]];
   [MobileScannerPlugin registerWithRegistrar:[registry registrarForPlugin:@"MobileScannerPlugin"]];
-  [QrCodeToolsPlugin registerWithRegistrar:[registry registrarForPlugin:@"QrCodeToolsPlugin"]];
+  [FlutterQrPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterQrPlugin"]];
 }
 
 @end

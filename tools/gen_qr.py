@@ -14,7 +14,7 @@ def generate_qr_codes():
     output_dir = Path('../sample_qr')
     output_dir.mkdir(exist_ok=True)
     
-    print("🔲 Generating QR codes for demo parts...")
+    print("Generating QR codes for demo parts...")
     
     for i in range(1, 21):
         part_id = f"P-{i:03d}"
@@ -36,15 +36,15 @@ def generate_qr_codes():
         filename = output_dir / f"{part_id}.png"
         img.save(filename)
         
-        print(f"✓ Generated {filename}")
+        print(f"Generated {filename}")
     
-    print(f"\n🎉 Generated 20 QR codes in {output_dir}")
-    print("📱 You can now scan these QR codes with the Flutter app!")
+    print(f"\nGenerated 20 QR codes in {output_dir}")
+    print("You can now scan these QR codes with the Flutter app!")
 
 if __name__ == "__main__":
     try:
         generate_qr_codes()
     except ImportError:
-        print("❌ qrcode library not found. Install with: pip install qrcode[pil]")
+        print("ERROR: qrcode library not found. Install with: pip install qrcode[pil]")
     except Exception as e:
-        print(f"❌ Error generating QR codes: {e}")
+        print(f"ERROR: Error generating QR codes: {e}")

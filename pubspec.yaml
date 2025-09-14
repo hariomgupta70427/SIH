@@ -5,25 +5,26 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.5.0 <4.0.0'
+  flutter: '>=3.22.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: ^2.24.2
-  firebase_auth: ^4.15.3
-  cloud_firestore: ^4.13.6
-  firebase_database: ^10.4.0
-  connectivity_plus: ^5.0.2
-  mobile_scanner: ^3.5.6
-  http: ^1.1.0
-  image_picker: ^1.0.4
-  qr_code_tools: ^0.2.0
+  firebase_core: ^3.8.0
+  firebase_auth: ^5.3.3
+  cloud_firestore: ^5.5.0
+  firebase_database: ^11.3.4
+  connectivity_plus: ^6.1.0
+  mobile_scanner: ^5.2.3
+  http: ^1.2.2
+  image_picker: ^1.1.2
+  qr_code_scanner: ^1.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^5.0.0
   integration_test:
     sdk: flutter
 

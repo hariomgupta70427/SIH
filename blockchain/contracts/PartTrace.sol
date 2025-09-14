@@ -194,7 +194,12 @@ contract PartTrace {
     /**
      * @dev Verify and get part details
      * @param partId Part identifier
-     * @return Part details
+     * @return name Part name
+     * @return manufacturer Part manufacturer
+     * @return currentStatus Current status
+     * @return currentOwner Current owner address
+     * @return createdAt Creation timestamp
+     * @return updatedAt Last update timestamp
      */
     function verifyPart(string memory partId) external view partExists(partId) returns (
         string memory name,
@@ -218,7 +223,11 @@ contract PartTrace {
     /**
      * @dev Get complete history of a part
      * @param partId Part identifier
-     * @return Arrays of history data
+     * @return statuses Array of status strings
+     * @return locations Array of location strings
+     * @return updatedBy Array of updater addresses
+     * @return timestamps Array of timestamps
+     * @return remarks Array of remarks
      */
     function getPartHistory(string memory partId) external view partExists(partId) returns (
         string[] memory statuses,
@@ -252,7 +261,7 @@ contract PartTrace {
      * @param partId Part identifier
      * @return Boolean indicating existence
      */
-    function partExists(string memory partId) external view returns (bool) {
+    function checkPartExists(string memory partId) external view returns (bool) {
         return parts[partId].exists;
     }
     

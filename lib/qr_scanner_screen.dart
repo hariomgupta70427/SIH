@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:qr_code_tools/qr_code_tools.dart';
+import 'package:qr_code_scanner/qr_code_scanner.dart' as qr_scanner;
 import 'dart:io';
 import 'qr_result_screen.dart';
 
@@ -55,18 +55,12 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
-        final String? qrData = await QrCodeToolsPlugin.decodeFrom(image.path);
-        if (qrData != null && qrData.isNotEmpty) {
-          _processQRData(qrData);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No QR code found in image')),
-          );
-        }
+        // For now, just show manual entry as fallback
+        _showManualEntryDialog();
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error scanning image: $e')),
+        SnackBar(content: Text('Error picking image: $e')),
       );
     }
   }
