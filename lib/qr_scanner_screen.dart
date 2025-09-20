@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart' as qr_scanner;
-import 'dart:io';
+import 'package:permission_handler/permission_handler.dart';
 import 'qr_result_screen.dart';
 
 class QRScannerScreen extends StatefulWidget {
@@ -13,8 +12,22 @@ class QRScannerScreen extends StatefulWidget {
 class _QRScannerScreenState extends State<QRScannerScreen> {
   MobileScannerController cameraController = MobileScannerController();
   bool _isScanned = false;
+  bool _hasPermission = false;
   final TextEditingController _manualController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _requestCameraPermission();
+  }
+
+  Future<void> _requestCameraPermission() async {
+    final status = await Permission.camera.request();
+    setState(() {
+      _hasPermission = status == PermissionStatus.granted;
+    });
+  }
 
   @override
   void dispose() {
@@ -23,9 +36,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     super.dispose();
   }
 
-  // Handle QR code detection
   void _onDetect(BarcodeCapture capture) {
-    // Prevent multiple scans
     if (_isScanned) return;
     
     final List<Barcode> barcodes = capture.barcodes;
@@ -39,9 +50,17 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     }
   }
 
-  // Process QR data and navigate
   void _processQRData(String qrData) {
     setState(() => _isScanned = true);
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('QR Code detected: $qrData'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 1),
+      ),
+    );
+    
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -50,22 +69,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     );
   }
 
-  // Pick image from gallery and scan QR
-  Future<void> _pickImageAndScan() async {
-    try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
-        // For now, just show manual entry as fallback
-        _showManualEntryDialog();
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking image: $e')),
-      );
-    }
-  }
-
-  // Show manual entry dialog
   void _showManualEntryDialog() {
     showDialog(
       context: context,
@@ -107,15 +110,13 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
       ),
-      body: Stack(
+      body: _hasPermission ? Stack(
         children: [
-          // Camera preview with QR scanner
           MobileScanner(
             controller: cameraController,
             onDetect: _onDetect,
           ),
           
-          // Overlay with scanning frame
           Container(
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.5),
@@ -128,17 +129,10 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                   border: Border.all(color: Colors.white, width: 2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
               ),
             ),
           ),
           
-          // Instructions
           Positioned(
             bottom: 100,
             left: 0,
@@ -154,7 +148,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             ),
           ),
           
-          // Action buttons
           Positioned(
             bottom: 50,
             left: 20,
@@ -162,21 +155,12 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Manual entry
                 FloatingActionButton(
                   mini: true,
                   heroTag: 'manual',
                   onPressed: _showManualEntryDialog,
                   child: Icon(Icons.keyboard),
                 ),
-                // Gallery picker
-                FloatingActionButton(
-                  mini: true,
-                  heroTag: 'gallery',
-                  onPressed: _pickImageAndScan,
-                  child: Icon(Icons.photo_library),
-                ),
-                // Flash toggle
                 FloatingActionButton(
                   mini: true,
                   heroTag: 'flash',
@@ -187,6 +171,27 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             ),
           ),
         ],
+      ) : Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.camera_alt, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('Camera permission required'),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                await openAppSettings();
+              },
+              child: Text('Open Settings'),
+            ),
+            SizedBox(height: 8),
+            TextButton(
+              onPressed: _showManualEntryDialog,
+              child: Text('Enter Part ID Manually'),
+            ),
+          ],
+        ),
       ),
     );
   }

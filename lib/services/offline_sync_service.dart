@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 
 class OfflineSyncService {
   static final OfflineSyncService _instance = OfflineSyncService._internal();
@@ -12,16 +13,17 @@ class OfflineSyncService {
   // Firebase instances
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseDatabase _realtimeDb = FirebaseDatabase.instance;
-  
+
   // Connectivity monitoring
   final Connectivity _connectivity = Connectivity();
-  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
-  
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
   // Sync status
   bool _isOnline = true;
   bool _isSyncing = false;
-  final StreamController<bool> _syncStatusController = StreamController<bool>.broadcast();
-  
+  final StreamController<bool> _syncStatusController =
+      StreamController<bool>.broadcast();
+
   // Pending operations queue
   final List<PendingOperation> _pendingOperations = [];
 
@@ -29,25 +31,27 @@ class OfflineSyncService {
   Future<void> initialize() async {
     // Enable Firestore offline persistence (enabled by default on mobile)
     await _enableFirestoreOffline();
-    
+
     // Enable Realtime Database offline persistence
     await _enableRealtimeDbOffline();
-    
+
     // Start connectivity monitoring
     _startConnectivityMonitoring();
-    
+
     print('✓ Offline sync service initialized');
   }
 
   // Enable Firestore offline persistence
   Future<void> _enableFirestoreOffline() async {
     try {
-      // Firestore offline persistence is enabled by default on mobile
-      // For web, we need to explicitly enable it
-      await _firestore.enablePersistence(
-        const PersistenceSettings(synchronizeTabs: true)
-      );
-      print('✓ Firestore offline persistence enabled');
+      // Only enable persistence on mobile platforms
+      if (!kIsWeb) {
+        // Firestore offline persistence is enabled by default on mobile
+        _firestore.settings = const Settings(persistenceEnabled: true);
+        print('✓ Firestore offline persistence enabled');
+      } else {
+        print('✓ Web platform - using default Firestore settings');
+      }
     } catch (e) {
       // Persistence may already be enabled
       print('Firestore persistence: $e');
@@ -57,13 +61,18 @@ class OfflineSyncService {
   // Enable Realtime Database offline persistence
   Future<void> _enableRealtimeDbOffline() async {
     try {
-      // Enable offline persistence for Realtime Database
-      await _realtimeDb.setPersistenceEnabled(true);
-      
-      // Set cache size (10MB)
-      await _realtimeDb.setPersistenceCacheSizeBytes(10 * 1024 * 1024);
-      
-      print('✓ Realtime Database offline persistence enabled');
+      // Only enable on mobile platforms
+      if (!kIsWeb) {
+        // Enable offline persistence for Realtime Database
+        _realtimeDb.setPersistenceEnabled(true);
+
+        // Set cache size (10MB)
+        _realtimeDb.setPersistenceCacheSizeBytes(10 * 1024 * 1024);
+
+        print('✓ Realtime Database offline persistence enabled');
+      } else {
+        print('✓ Web platform - using default Realtime DB settings');
+      }
     } catch (e) {
       print('Realtime DB persistence error: $e');
     }
@@ -72,17 +81,17 @@ class OfflineSyncService {
   // Start monitoring connectivity changes
   void _startConnectivityMonitoring() {
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
-      (ConnectivityResult result) {
+      (List<ConnectivityResult> results) {
         final wasOnline = _isOnline;
-        _isOnline = result != ConnectivityResult.none;
-        
+        _isOnline = !results.contains(ConnectivityResult.none);
+
         print('Connectivity changed: ${_isOnline ? 'Online' : 'Offline'}');
-        
+
         // If we just came back online, sync pending operations
         if (!wasOnline && _isOnline) {
           _syncPendingOperations();
         }
-        
+
         _syncStatusController.add(_isOnline);
       },
     );
@@ -107,16 +116,16 @@ class OfflineSyncService {
           data: partData,
           timestamp: DateTime.now(),
         );
-        
+
         _pendingOperations.add(operation);
-        
+
         // Write to local cache with pending status
         await _firestore.collection('parts').add({
           ...partData,
           'createdAt': DateTime.now(),
           'syncStatus': 'pending',
         });
-        
+
         print('✓ Part queued for sync (offline)');
       }
     } catch (e) {
@@ -145,16 +154,16 @@ class OfflineSyncService {
           data: updates,
           timestamp: DateTime.now(),
         );
-        
+
         _pendingOperations.add(operation);
-        
+
         // Update local cache
         await _firestore.collection('parts').doc(partId).update({
           ...updates,
           'updatedAt': DateTime.now(),
           'syncStatus': 'pending',
         });
-        
+
         print('✓ Part update queued for sync (offline)');
       }
     } catch (e) {
@@ -188,16 +197,16 @@ class OfflineSyncService {
           data: inspectionData,
           timestamp: DateTime.now(),
         );
-        
+
         _pendingOperations.add(operation);
-        
+
         // Store locally
         await _firestore.collection('inspections').add({
           ...inspectionData,
           'createdAt': DateTime.now(),
           'syncStatus': 'pending',
         });
-        
+
         print('✓ Inspection queued for sync (offline)');
       }
     } catch (e) {
@@ -225,16 +234,16 @@ class OfflineSyncService {
   // Sync pending operations when back online
   Future<void> _syncPendingOperations() async {
     if (_isSyncing || _pendingOperations.isEmpty) return;
-    
+
     _isSyncing = true;
     print('🔄 Syncing ${_pendingOperations.length} pending operations...');
-    
+
     final operationsToSync = List<PendingOperation>.from(_pendingOperations);
     _pendingOperations.clear();
-    
+
     int successCount = 0;
     int failureCount = 0;
-    
+
     for (final operation in operationsToSync) {
       try {
         await _executePendingOperation(operation);
@@ -245,7 +254,7 @@ class OfflineSyncService {
         failureCount++;
       }
     }
-    
+
     print('✓ Sync completed: $successCount success, $failureCount failed');
     _isSyncing = false;
   }
@@ -275,7 +284,7 @@ class OfflineSyncService {
           });
         }
         break;
-        
+
       case OperationType.update:
         await _firestore
             .collection(operation.collection)
@@ -286,7 +295,7 @@ class OfflineSyncService {
           'syncStatus': 'synced',
         });
         break;
-        
+
       case OperationType.delete:
         await _firestore
             .collection(operation.collection)
