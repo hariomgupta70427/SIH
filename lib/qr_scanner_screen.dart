@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'qr_result_screen.dart';
+import 'services/scan_history_service.dart';
 
 class QRScannerScreen extends StatefulWidget {
   @override
@@ -50,14 +51,29 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     }
   }
 
-  void _processQRData(String qrData) {
+  void _processQRData(String qrData) async {
     setState(() => _isScanned = true);
+    
+    // Save to history
+    final scanItem = ScanHistoryItem(
+      qrData: qrData,
+      scanTime: DateTime.now(),
+    );
+    await ScanHistoryService.addScan(scanItem);
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('QR Code detected: $qrData'),
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 8),
+            Text('QR Code detected: $qrData'),
+          ],
+        ),
         backgroundColor: Colors.green,
-        duration: Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        duration: Duration(seconds: 2),
       ),
     );
     
@@ -66,19 +82,31 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       MaterialPageRoute(
         builder: (context) => QRResultScreen(qrData: qrData),
       ),
-    );
+    ).then((_) {
+      Navigator.pop(context, true); // Return to home with success result
+    });
   }
 
   void _showManualEntryDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Enter Part ID'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.edit_rounded, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Enter Part ID'),
+          ],
+        ),
         content: TextField(
           controller: _manualController,
           decoration: InputDecoration(
             hintText: 'e.g., P-001',
-            border: OutlineInputBorder(),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            prefixIcon: Icon(Icons.qr_code_rounded),
           ),
           autofocus: true,
         ),
@@ -95,6 +123,11 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                 _processQRData(partId);
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             child: Text('Submit'),
           ),
         ],
@@ -106,9 +139,10 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Scan QR Code'),
+        title: Text('Scan QR Code', style: TextStyle(fontWeight: FontWeight.w600)),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: _hasPermission ? Stack(
         children: [
