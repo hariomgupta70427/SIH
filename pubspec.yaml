@@ -14,14 +14,12 @@ dependencies:
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.1
   cloud_firestore: ^5.4.3
-  firebase_database: ^11.1.4
-  connectivity_plus: ^6.0.5
-  mobile_scanner: ^5.2.3
+  firebase_storage: ^12.3.2
   http: ^1.2.2
   image_picker: ^1.1.2
-  permission_handler: ^11.3.1
   shared_preferences: ^2.2.2
   intl: ^0.19.0
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

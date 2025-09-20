@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'auth_screen.dart';
+import 'services/firebase_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Enable demo mode by default for cross-platform compatibility
+  FirebaseService.enableDemoMode();
+  
   runApp(MyApp());
 }
 
@@ -9,7 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'QRail',
+      title: 'QRail - Railway Inspection System',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -20,13 +26,11 @@ class MyApp extends StatelessWidget {
         appBarTheme: AppBarTheme(
           centerTitle: true,
           elevation: 0,
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.black87,
         ),
         cardTheme: CardThemeData(
-          elevation: 2,
+          elevation: 4,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -37,8 +41,15 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
       ),
-      home: HomeScreen(),
+      home: AuthScreen(),
     );
   }
 }

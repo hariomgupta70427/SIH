@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        .header { background: #2c3e50; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-links { display: flex; gap: 1rem; }
+        .nav-links a { color: white; text-decoration: none; padding: 0.5rem 1rem; background: rgba(255,255,255,0.2); border-radius: 20px; }
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: white; border-radius: 8px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .status-item { text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; }
+        .status-value { font-size: 1.5rem; font-weight: bold; color: #2c3e50; }
+        .status-label { color: #7f8c8d; margin-top: 0.5rem; }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; margin-right: 1rem; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .prediction-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { margin-bottom: 0.5rem; font-weight: 600; }
+        .form-group input, .form-group select { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
+        .prediction-result { padding: 1rem; border-radius: 8px; margin-top: 1rem; }
+        .risk-low { background: #d4edda; color: #155724; }
+        .risk-medium { background: #fff3cd; color: #856404; }
+        .risk-high { background: #f8d7da; color: #721c24; }
+        .log { background: #f8f9fa; padding: 1rem; border-radius: 8px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ML Dashboard</h1>
+        <div class="nav-links">
+            <a href="/dashboard">Analytics</a>
+            <a href="/inspections">Inspections</a>
+            <a href="/data-entry">Add Data</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Model Status</h2>
+            <div class="status-grid" id="statusGrid">
+                <div class="status-item">
+                    <div class="status-value" id="modelStatus">Loading...</div>
+                    <div class="status-label">Model Status</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="trainingStatus">-</div>
+                    <div class="status-label">Training Status</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" id="trainBtn" onclick="trainModel()">Train Model</button>
+            <button class="btn btn-success" onclick="loadStatus()">Refresh Status</button>
+        </div>
+
+        <div class="card">
+            <h2>Failure Prediction</h2>
+            <div class="prediction-form">
+                <div class="form-group">
+                    <label>Condition</label>
+                    <select id="condition">
+                        <option value="excellent">Excellent</option>
+                        <option value="good">Good</option>
+                        <option value="fair">Fair</option>
+                        <option value="poor">Poor</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select id="priority">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Defects Count</label>
+                    <input type="number" id="defectCount" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Age (days)</label>
+                    <input type="number" id="ageDays" min="0" value="30">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="predict()">Predict Failure</button>
+            <div id="predictionResult"></div>
+        </div>
+
+        <div class="card">
+            <h2>Activity Log</h2>
+            <div id="log" class="log">Ready...</div>
+        </div>
+    </div>
+
+    <script src="ml-dashboard.js"></script>
+</body>
+</html>
