@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -19,29 +21,136 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-    await Future.delayed(Duration(seconds: 1));
 
-    final email = _emailController.text.trim();
-    String userRole = 'user';
-    
-    if (_isLogin) {
-      if (email == 'inspector@qrail.com') userRole = 'inspector';
-      if (email == 'vendor@qrail.com') userRole = 'vendor';
-    } else {
-      userRole = _selectedRole;
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+      
+      if (_isLogin) {
+        final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        
+        if (credential.user != null) {
+          String userRole = 'user';
+          try {
+            final userDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(credential.user!.uid)
+                .get();
+            
+            if (userDoc.exists) {
+              userRole = userDoc.data()?['role'] ?? 'user';
+            }
+          } catch (e) {
+            print('Error fetching user role: $e');
+          }
+          
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => HomeScreen(userRole: userRole)),
+            );
+          }
+        }
+      } else {
+        final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        
+        if (credential.user != null) {
+          try {
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(credential.user!.uid)
+                .set({
+              'name': _nameController.text.trim(),
+              'email': email,
+              'role': _selectedRole,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+          } catch (e) {
+            print('Error saving user data: $e');
+          }
+          
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => HomeScreen(userRole: _selectedRole)),
+            );
+          }
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'Authentication failed';
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No user found with this email';
+          break;
+        case 'wrong-password':
+          message = 'Incorrect password';
+          break;
+        case 'email-already-in-use':
+          message = 'Email is already registered';
+          break;
+        case 'weak-password':
+          message = 'Password is too weak (minimum 6 characters)';
+          break;
+        case 'invalid-email':
+          message = 'Invalid email address';
+          break;
+        case 'invalid-credential':
+          message = 'Invalid email or password';
+          break;
+        case 'network-request-failed':
+          message = 'Network error. Please check your connection';
+          break;
+        case 'too-many-requests':
+          message = 'Too many attempts. Please try again later';
+          break;
+        default:
+          message = e.message ?? 'Authentication failed';
+      }
+      if (mounted) {
+        _showError(message);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError('Authentication failed: ${e.toString()}');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-    
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => HomeScreen(userRole: userRole)),
+  }
+  
+
+  
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
-    
-    setState(() => _isLoading = false);
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -50,20 +159,27 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(24),
-              child: Card(
-                elevation: 20,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                child: Container(
-                  padding: EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    gradient: LinearGradient(
-                      colors: [Colors.white, Colors.grey[50]!],
-                    ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: EdgeInsets.all(16),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - 32,
+                    maxWidth: constraints.maxWidth > 600 ? 400 : constraints.maxWidth - 32,
                   ),
+                  child: Center(
+                    child: Card(
+                      elevation: 20,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      child: Container(
+                        padding: EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          gradient: LinearGradient(
+                            colors: [Colors.white, Colors.grey[50]!],
+                          ),
+                        ),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -293,76 +409,21 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
                         
-                        // Demo Credentials
-                        if (_isLogin)
-                          Container(
-                            margin: EdgeInsets.only(top: 24),
-                            padding: EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [Colors.amber[50]!, Colors.orange[50]!]),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.orange[200]!, width: 1),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
-                                    SizedBox(width: 8),
-                                    Text('Demo Credentials', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.orange[800])),
-                                  ],
-                                ),
-                                SizedBox(height: 12),
-                                _buildCredentialRow('Inspector', 'inspector@qrail.com', 'inspector123', Icons.search),
-                                _buildCredentialRow('Vendor', 'vendor@qrail.com', 'vendor123', Icons.qr_code_2),
-                                _buildCredentialRow('User', 'user@qrail.com', 'user123', Icons.person),
-                              ],
-                            ),
-                          ),
+
                       ],
                     ),
                   ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCredentialRow(String role, String email, String password, IconData icon) {
-    return GestureDetector(
-      onTap: () {
-        _emailController.text = email;
-        _passwordController.text = password;
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 8),
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: Colors.grey[600]),
-            SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(role, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-                  Text('$email / $password', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                ],
-              ),
-            ),
-            Icon(Icons.touch_app, size: 16, color: Colors.blue),
-          ],
-        ),
-      ),
-    );
-  }
+
 }

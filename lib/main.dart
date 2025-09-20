@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'auth_screen.dart';
-import 'services/firebase_service.dart';
+import 'simple_auth_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Enable demo mode by default for cross-platform compatibility
-  FirebaseService.enableDemoMode();
-  
   runApp(MyApp());
 }
 
@@ -49,7 +44,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: AuthScreen(),
+      home: SimpleAuthScreen(),
     );
   }
 }

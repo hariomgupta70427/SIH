@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/scan_history_service.dart';
-import '../qr_result_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   @override
@@ -177,21 +176,8 @@ class _HistoryScreenState extends State<HistoryScreen> with TickerProviderStateM
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(16),
                                   onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      PageRouteBuilder(
-                                        pageBuilder: (context, animation, _) => 
-                                            QRResultScreen(qrData: scan.qrData),
-                                        transitionsBuilder: (context, animation, _, child) {
-                                          return SlideTransition(
-                                            position: Tween<Offset>(
-                                              begin: Offset(1, 0),
-                                              end: Offset.zero,
-                                            ).animate(animation),
-                                            child: child,
-                                          );
-                                        },
-                                      ),
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Viewing scan details for ${scan.qrData}')),
                                     );
                                   },
                                   child: Padding(

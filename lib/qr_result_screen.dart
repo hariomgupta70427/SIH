@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'models/part_model.dart';
-import 'services/firebase_service.dart';
 
 class QRResultScreen extends StatefulWidget {
   final PartModel part;

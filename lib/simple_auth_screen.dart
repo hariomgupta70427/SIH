@@ -9,133 +9,272 @@ class SimpleAuthScreen extends StatefulWidget {
 class _SimpleAuthScreenState extends State<SimpleAuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
+  bool _isLogin = true;
   bool _isLoading = false;
+  String _selectedRole = 'inspector';
 
-  void _login() async {
+  void _authenticate() {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please fill all fields')),
+      );
+      return;
+    }
+
+    if (!_isLogin && _nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter your name')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     
-    await Future.delayed(Duration(seconds: 1));
-    
-    final email = _emailController.text.trim();
-    String userRole = 'user';
-    
-    if (email == 'inspector@qrail.com') userRole = 'inspector';
-    if (email == 'vendor@qrail.com') userRole = 'vendor';
-    
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => HomeScreen(userRole: userRole)),
-    );
+    // Simulate authentication delay
+    Future.delayed(Duration(seconds: 1), () {
+      if (mounted) {
+        String role = _isLogin ? 'inspector' : _selectedRole;
+        final email = _emailController.text.toLowerCase();
+        
+        if (email.contains('inspector')) role = 'inspector';
+        if (email.contains('vendor')) role = 'vendor';
+        
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => HomeScreen(userRole: role)),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue[900]!, Colors.blue[600]!],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.blue[900]!, Colors.blue[600]!, Colors.blue[400]!],
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(24),
-              child: Card(
-                elevation: 20,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.train_rounded, size: 64, color: Colors.blue[700]),
-                      SizedBox(height: 24),
-                      Text('QRail', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                      Text('Railway Inspection System', style: TextStyle(color: Colors.grey[600])),
-                      SizedBox(height: 32),
-                      
-                      TextField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                          prefixIcon: Icon(Icons.email),
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      
-                      TextField(
-                        controller: _passwordController,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                          prefixIcon: Icon(Icons.lock),
-                        ),
-                        obscureText: true,
-                      ),
-                      SizedBox(height: 24),
-                      
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[600],
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              children: [
+                SizedBox(height: 60),
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(Icons.train, size: 60, color: Colors.blue[600]),
+                ),
+                SizedBox(height: 24),
+                Text('QRail', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white)),
+                Text('Railway Inspection System', style: TextStyle(fontSize: 16, color: Colors.white70)),
+                SizedBox(height: 40),
+                
+                Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        // Login/Register Toggle
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: _isLoading 
-                            ? CircularProgressIndicator(color: Colors.white)
-                            : Text('Login', style: TextStyle(fontSize: 18, color: Colors.white)),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _isLogin = true),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: _isLogin ? Colors.blue[600] : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      'Login',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: _isLogin ? Colors.white : Colors.grey[600],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _isLogin = false),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: !_isLogin ? Colors.blue[600] : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      'Register',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: !_isLogin ? Colors.white : Colors.grey[600],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 24),
-                      
-                      Container(
-                        padding: EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.orange[50],
-                          borderRadius: BorderRadius.circular(12),
+                        SizedBox(height: 24),
+                        
+                        // Role Selection for Registration
+                        if (!_isLogin) ...[
+                          Text('Select Role', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _selectedRole = 'inspector'),
+                                  child: Container(
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: _selectedRole == 'inspector' ? Colors.blue[100] : Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: _selectedRole == 'inspector' ? Colors.blue : Colors.grey[300]!,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Icon(Icons.search, color: _selectedRole == 'inspector' ? Colors.blue : Colors.grey),
+                                        SizedBox(height: 4),
+                                        Text('Inspector', style: TextStyle(fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _selectedRole = 'vendor'),
+                                  child: Container(
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: _selectedRole == 'vendor' ? Colors.teal[100] : Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: _selectedRole == 'vendor' ? Colors.teal : Colors.grey[300]!,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Icon(Icons.qr_code, color: _selectedRole == 'vendor' ? Colors.teal : Colors.grey),
+                                        SizedBox(height: 4),
+                                        Text('Vendor', style: TextStyle(fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          TextField(
+                            controller: _nameController,
+                            decoration: InputDecoration(
+                              labelText: 'Full Name',
+                              prefixIcon: Icon(Icons.person),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                        ],
+                        
+                        TextField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.email),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
                         ),
-                        child: Column(
-                          children: [
-                            Text('Demo Credentials:', style: TextStyle(fontWeight: FontWeight.bold)),
-                            SizedBox(height: 8),
-                            _buildCredRow('Inspector', 'inspector@qrail.com', 'inspector123'),
-                            _buildCredRow('Vendor', 'vendor@qrail.com', 'vendor123'),
-                            _buildCredRow('User', 'user@qrail.com', 'user123'),
-                          ],
+                        SizedBox(height: 16),
+                        TextField(
+                          controller: _passwordController,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: Icon(Icons.lock),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          obscureText: true,
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 24),
+                        
+                        Container(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _authenticate,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue[600],
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: _isLoading
+                                ? CircularProgressIndicator(color: Colors.white)
+                                : Text(_isLogin ? 'Login' : 'Register', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                        
+                        if (_isLogin) ...[
+                          SizedBox(height: 16),
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.orange[50],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              children: [
+                                Text('Demo Accounts:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700])),
+                                SizedBox(height: 8),
+                                Text('inspector@demo.com - Inspector', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                Text('vendor@demo.com - Vendor', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                Text('Any password works', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCredRow(String role, String email, String password) {
-    return GestureDetector(
-      onTap: () {
-        _emailController.text = email;
-        _passwordController.text = password;
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 4),
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Text('$role: ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-            Text('$email / $password', style: TextStyle(fontSize: 12)),
-          ],
         ),
       ),
     );

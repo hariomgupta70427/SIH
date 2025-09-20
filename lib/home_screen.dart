@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'auth_screen.dart';
+import 'simple_auth_screen.dart';
 import 'qr_scanner_screen.dart';
 import 'screens/qr_generator_screen.dart';
 import 'screens/inventory_screen.dart';
 import 'screens/scan_history_screen.dart';
+import 'screens/analytics_dashboard_screen.dart';
+import 'screens/add_inspection_screen.dart';
+import 'screens/manage_inspections_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userRole;
@@ -158,76 +161,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
                 
                 // Action Buttons
-                Column(
-                  children: [
-                    if (widget.userRole == 'inspector' || widget.userRole == 'user') ...[
-                      _buildActionButton('Start QR Scanner', Icons.qr_code_scanner_rounded, Colors.blue, () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => QRScannerScreen(inspectorId: _currentUserId),
-                          ),
-                        );
-                      }),
-                      SizedBox(height: 12),
-                      _buildActionButton('Scan History', Icons.history_rounded, Colors.grey[700]!, () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ScanHistoryScreen(inspectorId: _currentUserId),
-                          ),
-                        );
-                      }, isOutlined: true),
-                    ],
-                    
-                    if (widget.userRole == 'inspector') ...[
-                      SizedBox(height: 12),
-                      _buildActionButton('Analytics Dashboard', Icons.dashboard_rounded, Colors.orange[600]!, () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Analytics Dashboard - Coming Soon!')),
-                        );
-                      }),
-                      SizedBox(height: 12),
-                      _buildActionButton('Add Inspection Data', Icons.add_circle_outline, Colors.green[600]!, () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Data Entry - Coming Soon!')),
-                        );
-                      }),
-                      SizedBox(height: 12),
-                      _buildActionButton('Manage Inspections', Icons.list_alt, Colors.purple[600]!, () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Inspection Management - Coming Soon!')),
-                        );
-                      }),
-                    ],
-                    
-                    if (widget.userRole == 'vendor') ...[
-                      _buildActionButton('Generate Part QR', Icons.qr_code_2, Colors.teal[600]!, () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => QRGeneratorScreen(
-                              vendorId: _currentUserId,
-                              vendorName: _currentUserName,
-                            ),
-                          ),
-                        );
-                      }),
-                      SizedBox(height: 12),
-                      _buildActionButton('Manage Inventory', Icons.inventory_2, Colors.indigo[600]!, () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => InventoryScreen(
-                              vendorId: _currentUserId,
-                              vendorName: _currentUserName,
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
-                  ],
-                ),
+                if (widget.userRole == 'inspector') ..._buildInspectorButtons()
+                else if (widget.userRole == 'vendor') ..._buildVendorButtons()
+                else ..._buildUserButtons(),
               ],
             ),
           ),
@@ -334,7 +270,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _logout() {
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AuthScreen()));
+    if (mounted) {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => SimpleAuthScreen()));
+    }
   }
 
   String _getRoleTitle() {
@@ -375,5 +313,99 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       case 'vendor': return 'Create QR codes for your railway parts\nand manage inventory efficiently';
       default: return 'Point your camera at a QR code\nto get railway part information';
     }
+  }
+
+  List<Widget> _buildInspectorButtons() {
+    return [
+      // Primary Actions Row
+      Row(
+        children: [
+          Expanded(
+            child: _buildGridButton('QR Scanner', Icons.qr_code_scanner_rounded, Colors.blue, () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => QRScannerScreen(inspectorId: _currentUserId)));
+            }),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: _buildGridButton('Analytics', Icons.dashboard_rounded, Colors.orange[600]!, () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => AnalyticsDashboardScreen(inspectorId: _currentUserId)));
+            }),
+          ),
+        ],
+      ),
+      SizedBox(height: 12),
+      
+      // Secondary Actions Row
+      Row(
+        children: [
+          Expanded(
+            child: _buildGridButton('Add Data', Icons.add_circle_outline, Colors.green[600]!, () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => AddInspectionScreen(inspectorId: _currentUserId)));
+            }),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: _buildGridButton('Manage', Icons.list_alt, Colors.purple[600]!, () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ManageInspectionsScreen(inspectorId: _currentUserId)));
+            }),
+          ),
+        ],
+      ),
+      SizedBox(height: 12),
+      
+      // History Button (Full Width)
+      _buildActionButton('Scan History', Icons.history_rounded, Colors.grey[700]!, () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ScanHistoryScreen(inspectorId: _currentUserId)));
+      }, isOutlined: true),
+    ];
+  }
+
+  List<Widget> _buildVendorButtons() {
+    return [
+      _buildActionButton('Generate Part QR', Icons.qr_code_2, Colors.teal[600]!, () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => QRGeneratorScreen(vendorId: _currentUserId, vendorName: _currentUserName)));
+      }),
+      SizedBox(height: 12),
+      _buildActionButton('Manage Inventory', Icons.inventory_2, Colors.indigo[600]!, () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => InventoryScreen(vendorId: _currentUserId, vendorName: _currentUserName)));
+      }),
+    ];
+  }
+
+  List<Widget> _buildUserButtons() {
+    return [
+      _buildActionButton('Start QR Scanner', Icons.qr_code_scanner_rounded, Colors.blue, () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => QRScannerScreen(inspectorId: _currentUserId)));
+      }),
+      SizedBox(height: 12),
+      _buildActionButton('Scan History', Icons.history_rounded, Colors.grey[700]!, () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ScanHistoryScreen(inspectorId: _currentUserId)));
+      }, isOutlined: true),
+    ];
+  }
+
+  Widget _buildGridButton(String text, IconData icon, Color color, VoidCallback onPressed) {
+    return Container(
+      height: 80,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shadowColor: color.withOpacity(0.3),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          padding: EdgeInsets.all(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 28),
+            SizedBox(height: 4),
+            Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
   }
 }

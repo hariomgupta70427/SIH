@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'models/part_model.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'models/scan_history_model.dart';
 import 'services/firebase_service.dart';
 import 'qr_result_screen.dart';
@@ -16,7 +16,15 @@ class QRScannerScreen extends StatefulWidget {
 
 class _QRScannerScreenState extends State<QRScannerScreen> {
   bool _isProcessing = false;
+  bool _showCamera = false;
+  MobileScannerController? _scannerController;
   final TextEditingController _manualController = TextEditingController();
+  
+  @override
+  void initState() {
+    super.initState();
+    _scannerController = MobileScannerController();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,14 +76,77 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                 SizedBox(height: 16),
                 
                 Text(
-                  kIsWeb 
-                    ? 'Camera scanning not available on web.\nUse manual entry below.'
-                    : 'Camera scanning available on mobile devices.\nUse manual entry as alternative.',
+                  _showCamera 
+                    ? 'Point camera at QR code to scan'
+                    : (kIsWeb 
+                        ? 'Camera scanning not available on web.\nUse manual entry below.'
+                        : 'Tap camera button to start scanning'),
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 
-                SizedBox(height: 40),
+                SizedBox(height: 32),
+                
+                // Camera Scanner (Mobile only)
+                if (!kIsWeb && !_showCamera)
+                  Container(
+                    width: double.infinity,
+                    height: 56,
+                    margin: EdgeInsets.only(bottom: 24),
+                    child: ElevatedButton(
+                      onPressed: () => setState(() => _showCamera = true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[600],
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.camera_alt, size: 24),
+                          SizedBox(width: 8),
+                          Text('Open Camera Scanner', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                  ),
+                
+                // QR Camera View
+                if (_showCamera && !kIsWeb)
+                  Container(
+                    height: 300,
+                    margin: EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.blue, width: 2),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: MobileScanner(
+                        controller: _scannerController,
+                        onDetect: _onQRDetected,
+                      ),
+                    ),
+                  ),
+                
+                if (_showCamera && !kIsWeb)
+                  Container(
+                    width: double.infinity,
+                    height: 48,
+                    margin: EdgeInsets.only(bottom: 24),
+                    child: ElevatedButton(
+                      onPressed: () => setState(() => _showCamera = false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[600],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text('Close Camera'),
+                    ),
+                  ),
+                
+                SizedBox(height: 16),
                 
                 // Manual Entry Card
                 Card(
@@ -280,8 +351,63 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     );
   }
   
+  void _onQRDetected(BarcodeCapture capture) {
+    final List<Barcode> barcodes = capture.barcodes;
+    if (barcodes.isNotEmpty && !_isProcessing) {
+      final String? code = barcodes.first.rawValue;
+      if (code != null) {
+        _processScannedCode(code);
+      }
+    }
+  }
+  
+  Future<void> _processScannedCode(String code) async {
+    setState(() {
+      _isProcessing = true;
+      _showCamera = false;
+    });
+    
+    _scannerController?.stop();
+    
+    try {
+      final part = await FirebaseService.getPartById(code);
+      
+      if (part != null) {
+        final scanHistory = ScanHistoryModel(
+          id: '',
+          inspectorId: widget.inspectorId,
+          partId: part.id,
+          partName: part.partName,
+          vendorName: part.vendorName,
+          scannedAt: DateTime.now(),
+          status: 'scanned',
+        );
+        
+        await FirebaseService.addScanHistory(scanHistory);
+        
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => QRResultScreen(
+              part: part,
+              inspectorId: widget.inspectorId,
+            ),
+          ),
+        );
+      } else {
+        _showErrorDialog('Invalid QR Code', 'QR code "$code" is not recognized in our system.');
+      }
+    } catch (e) {
+      _showErrorDialog('Error', 'Failed to process QR code: $e');
+    } finally {
+      setState(() => _isProcessing = false);
+      _scannerController?.start();
+    }
+  }
+
   @override
   void dispose() {
+    _scannerController?.dispose();
     _manualController.dispose();
     super.dispose();
   }
